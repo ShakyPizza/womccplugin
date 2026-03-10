@@ -31,7 +31,7 @@ public class WomApiClient
 	 */
 	public List<WomMember> fetchMembers(int groupId) throws IOException
 	{
-		String url = API_BASE + "/groups/" + groupId + "/members";
+		String url = API_BASE + "/groups/" + groupId;
 
 		Request request = new Request.Builder()
 			.url(url)
@@ -46,40 +46,54 @@ public class WomApiClient
 			}
 
 			String body = response.body().string();
-			JsonArray array = JsonParser.parseString(body).getAsJsonArray();
-
-			List<WomMember> members = new ArrayList<>();
-			for (JsonElement elem : array)
-			{
-				JsonObject obj = elem.getAsJsonObject();
-				if (!obj.has("player"))
-				{
-					continue;
-				}
-
-				JsonObject player = obj.getAsJsonObject("player");
-
-				String displayName = player.has("displayName") && !player.get("displayName").isJsonNull()
-					? player.get("displayName").getAsString()
-					: player.get("username").getAsString();
-
-				long totalXp = player.has("exp") && !player.get("exp").isJsonNull()
-					? player.get("exp").getAsLong()
-					: 0L;
-
-				double ehp = player.has("ehp") && !player.get("ehp").isJsonNull()
-					? player.get("ehp").getAsDouble()
-					: 0.0;
-
-				double ehb = player.has("ehb") && !player.get("ehb").isJsonNull()
-					? player.get("ehb").getAsDouble()
-					: 0.0;
-
-				members.add(new WomMember(displayName, totalXp, ehp, ehb));
-			}
+			List<WomMember> members = parseMembers(body);
 
 			log.debug("Fetched {} members for group {}", members.size(), groupId);
 			return members;
 		}
+	}
+
+	static List<WomMember> parseMembers(String body) throws IOException
+	{
+		JsonObject root = new JsonParser().parse(body).getAsJsonObject();
+		JsonArray memberships = root.has("memberships") && root.get("memberships").isJsonArray()
+			? root.getAsJsonArray("memberships")
+			: new JsonArray();
+
+		List<WomMember> members = new ArrayList<>();
+		for (JsonElement elem : memberships)
+		{
+			JsonObject obj = elem.getAsJsonObject();
+			if (!obj.has("player") || obj.get("player").isJsonNull())
+			{
+				continue;
+			}
+
+			JsonObject player = obj.getAsJsonObject("player");
+			if (!player.has("username") || player.get("username").isJsonNull())
+			{
+				continue;
+			}
+
+			String displayName = player.has("displayName") && !player.get("displayName").isJsonNull()
+				? player.get("displayName").getAsString()
+				: player.get("username").getAsString();
+
+			long totalXp = player.has("exp") && !player.get("exp").isJsonNull()
+				? player.get("exp").getAsLong()
+				: 0L;
+
+			double ehp = player.has("ehp") && !player.get("ehp").isJsonNull()
+				? player.get("ehp").getAsDouble()
+				: 0.0;
+
+			double ehb = player.has("ehb") && !player.get("ehb").isJsonNull()
+				? player.get("ehb").getAsDouble()
+				: 0.0;
+
+			members.add(new WomMember(displayName, totalXp, ehp, ehb));
+		}
+
+		return members;
 	}
 }

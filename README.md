@@ -16,7 +16,7 @@ The plugin adds a sidebar button to RuneLite and loads members from a Wise Old M
 
 Current behavior:
 
-- Fetches members from `https://api.wiseoldman.net/v2/groups/{groupId}/members`
+- Fetches group details from `https://api.wiseoldman.net/v2/groups/{groupId}` and reads the `memberships` list
 - Falls back to username when a display name is not present
 - Sorts the list by total XP descending
 - Supports name filtering through the sidebar search field
