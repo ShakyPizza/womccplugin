@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -45,12 +46,13 @@ public class WomApiClient
 				throw new IOException("WOM API error " + response.code() + " for group " + groupId);
 			}
 
-			if (response.body() == null)
+			ResponseBody responseBody = response.body();
+			if (responseBody == null)
 			{
 				throw new IOException("Empty response body from WOM API for group " + groupId);
 			}
 
-			String body = response.body().string();
+			String body = responseBody.string();
 			List<WomMember> members = parseMembers(body);
 
 			log.debug("Fetched {} members for group {}", members.size(), groupId);

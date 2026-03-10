@@ -11,7 +11,6 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -37,7 +36,6 @@ class WomClanPanel extends PluginPanel
 
 	private List<WomMember> allMembers = new ArrayList<>();
 	private long lastManualSyncTime = 0;
-	private Instant lastSyncInstant = null;
 
 	private final ScheduledExecutorService cooldownExecutor = Executors.newSingleThreadScheduledExecutor();
 	private ScheduledFuture<?> cooldownTask;
@@ -182,8 +180,7 @@ class WomClanPanel extends PluginPanel
 	{
 		allMembers = new ArrayList<>(members);
 		allMembers.sort(Comparator.comparingLong(WomMember::getTotalXp).reversed());
-		lastSyncInstant = Instant.now();
-		statusLabel.setText("Synced: just now");
+statusLabel.setText("Synced: just now");
 		syncButton.setEnabled(true);
 		syncButton.setText("Sync Now");
 		filterMembers();
