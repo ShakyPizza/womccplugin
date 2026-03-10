@@ -14,7 +14,7 @@ repositories {
 }
 
 def runeLiteVersion = 'latest.release'
-def pluginMainClass = 'com.example.ExamplePluginTest' // launcher class (loads WomClanPlugin)
+def pluginMainClass = 'com.womclan.ExamplePluginTest' // launcher class (loads WomClanPlugin)
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -27,7 +27,7 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'com.example'
+group = 'com.womclan'
 version = '1.0-SNAPSHOT'
 
 tasks.withType(JavaCompile).configureEach {

@@ -1,4 +1,4 @@
-package com.example;
+package com.womclan;
 
 import org.junit.Test;
 
