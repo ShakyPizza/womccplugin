@@ -45,6 +45,11 @@ public class WomApiClient
 				throw new IOException("WOM API error " + response.code() + " for group " + groupId);
 			}
 
+			if (response.body() == null)
+			{
+				throw new IOException("Empty response body from WOM API for group " + groupId);
+			}
+
 			String body = response.body().string();
 			List<WomMember> members = parseMembers(body);
 
