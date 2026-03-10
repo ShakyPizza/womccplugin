@@ -59,10 +59,10 @@ class WomClanPanel extends PluginPanel
 		statusLabel.setFont(FontManager.getRunescapeSmallFont());
 		statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
-		JButton expandButton = new JButton("⛶");
+		JButton expandButton = new JButton("GUI");
 		expandButton.setFont(FontManager.getRunescapeSmallFont());
 		expandButton.setFocusPainted(false);
-		expandButton.setToolTipText("Open full table");
+		expandButton.setToolTipText("Open GUI in a separate window");
 		expandButton.addActionListener(e -> openExpandedWindow());
 
 		JPanel topBar = new JPanel(new BorderLayout(6, 0));
