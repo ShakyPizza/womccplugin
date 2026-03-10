@@ -1,4 +1,4 @@
-package com.example;
+package com.womclan;
 
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;

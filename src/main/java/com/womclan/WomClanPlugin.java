@@ -1,4 +1,4 @@
-package com.example;
+package com.womclan;
 
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;

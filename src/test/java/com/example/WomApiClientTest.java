@@ -2,6 +2,9 @@ package com.example;
 
 import org.junit.Test;
 
+import com.womclan.WomApiClient;
+import com.womclan.WomMember;
+
 import java.io.IOException;
 import java.util.List;
 

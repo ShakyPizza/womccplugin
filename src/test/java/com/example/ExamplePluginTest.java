@@ -1,5 +1,7 @@
 package com.example;
 
+import com.womclan.WomClanPlugin;
+
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 

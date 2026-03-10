@@ -1,4 +1,4 @@
-package com.example;
+package com.womclan;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
