@@ -52,6 +52,7 @@ class WomClanPanel extends PluginPanel
 		syncButton = new JButton("Sync Now");
 		syncButton.setFont(FontManager.getRunescapeSmallFont());
 		syncButton.setFocusPainted(false);
+		syncButton.setToolTipText("Fetch latest clan stats from WOM API");
 		syncButton.addActionListener(this::onSyncClicked);
 
 		statusLabel = new JLabel("Not synced yet");
