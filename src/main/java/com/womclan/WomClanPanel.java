@@ -39,6 +39,8 @@ class WomClanPanel extends PluginPanel
 	private final ScheduledExecutorService cooldownExecutor = Executors.newSingleThreadScheduledExecutor();
 	private ScheduledFuture<?> cooldownTask;
 
+	private WomExpandedWindow expandedWindow;
+
 	WomClanPanel(WomClanPlugin plugin)
 	{
 		this.plugin = plugin;
@@ -57,11 +59,18 @@ class WomClanPanel extends PluginPanel
 		statusLabel.setFont(FontManager.getRunescapeSmallFont());
 		statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
+		JButton expandButton = new JButton("⛶");
+		expandButton.setFont(FontManager.getRunescapeSmallFont());
+		expandButton.setFocusPainted(false);
+		expandButton.setToolTipText("Open full table");
+		expandButton.addActionListener(e -> openExpandedWindow());
+
 		JPanel topBar = new JPanel(new BorderLayout(6, 0));
 		topBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		topBar.setBorder(new EmptyBorder(8, 8, 6, 8));
 		topBar.add(syncButton, BorderLayout.WEST);
 		topBar.add(statusLabel, BorderLayout.CENTER);
+		topBar.add(expandButton, BorderLayout.EAST);
 
 		// ── Search field ───────────────────────────────────────────────────────
 		searchField = new JTextField();
@@ -179,10 +188,15 @@ class WomClanPanel extends PluginPanel
 	{
 		allMembers = new ArrayList<>(members);
 		allMembers.sort(Comparator.comparingLong(WomMember::getTotalXp).reversed());
-statusLabel.setText("Synced: just now");
+		statusLabel.setText("Synced: just now");
 		syncButton.setEnabled(true);
 		syncButton.setText("Sync Now");
 		filterMembers();
+
+		if (expandedWindow != null && expandedWindow.isVisible())
+		{
+			expandedWindow.setMembers(allMembers);
+		}
 	}
 
 	/** Updates the status label text (call via SwingUtilities.invokeLater from background). */
@@ -203,9 +217,24 @@ statusLabel.setText("Synced: just now");
 	void shutdown()
 	{
 		cooldownExecutor.shutdownNow();
+		if (expandedWindow != null)
+		{
+			expandedWindow.dispose();
+		}
 	}
 
 	// ── Private helpers ────────────────────────────────────────────────────────
+
+	private void openExpandedWindow()
+	{
+		if (expandedWindow == null || !expandedWindow.isDisplayable())
+		{
+			expandedWindow = new WomExpandedWindow();
+		}
+		expandedWindow.setMembers(allMembers);
+		expandedWindow.setVisible(true);
+		expandedWindow.toFront();
+	}
 
 	private void filterMembers()
 	{

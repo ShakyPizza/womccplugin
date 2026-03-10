@@ -86,6 +86,10 @@ public class WomApiClient
 				? player.get("displayName").getAsString()
 				: player.get("username").getAsString();
 
+			String role = obj.has("role") && !obj.get("role").isJsonNull()
+				? obj.get("role").getAsString()
+				: "member";
+
 			long totalXp = player.has("exp") && !player.get("exp").isJsonNull()
 				? player.get("exp").getAsLong()
 				: 0L;
@@ -98,7 +102,7 @@ public class WomApiClient
 				? player.get("ehb").getAsDouble()
 				: 0.0;
 
-			members.add(new WomMember(displayName, totalXp, ehp, ehb));
+			members.add(new WomMember(displayName, role, totalXp, ehp, ehb));
 		}
 
 		return members;

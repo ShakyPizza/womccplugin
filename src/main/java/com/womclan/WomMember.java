@@ -6,6 +6,7 @@ import lombok.Value;
 public class WomMember
 {
 	String displayName;
+	String role;
 	long totalXp;
 	double ehp;
 	double ehb;
