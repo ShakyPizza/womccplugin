@@ -72,7 +72,7 @@ To find the group ID, open your group on [wiseoldman.net](https://wiseoldman.net
 - `src/main/java/com/womclan/WomMemberPanel.java`: sidebar row rendering
 - `src/main/java/com/womclan/WomClanConfig.java`: RuneLite config items
 - `src/test/java/com/womclan/WomApiClientTest.java`: parser coverage for WOM group response shape
-- `src/test/java/com/womclan/ExamplePluginTest.java`: local RuneLite launcher entrypoint
+- `src/test/java/com/womclan/WomClanPluginTest.java`: local RuneLite launcher entrypoint
 - `runelite-plugin.properties`: plugin metadata
 
 ## Local Development
