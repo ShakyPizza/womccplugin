@@ -14,7 +14,7 @@ repositories {
 }
 
 def runeLiteVersion = 'latest.release'
-def pluginMainClass = 'com.womclan.ExamplePluginTest' // launcher class (loads WomClanPlugin)
+def pluginMainClass = 'com.womclan.WomClanPluginTest' // launcher class (loads WomClanPlugin)
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
