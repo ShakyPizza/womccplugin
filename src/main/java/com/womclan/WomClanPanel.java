@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 class WomClanPanel extends PluginPanel
 {
 	private static final long COOLDOWN_MS = 5 * 60 * 1_000L;
+	private static final int SCROLLBAR_WIDTH = 8;
+	private static final int SCROLL_UNIT_INCREMENT = 16;
 
 	private final WomClanPlugin plugin;
 
@@ -43,6 +45,7 @@ class WomClanPanel extends PluginPanel
 
 	WomClanPanel(WomClanPlugin plugin)
 	{
+		super(false);
 		this.plugin = plugin;
 
 		setLayout(new BorderLayout(0, 0));
@@ -121,7 +124,10 @@ class WomClanPanel extends PluginPanel
 		JScrollPane scrollPane = new JScrollPane(memberListPanel);
 		scrollPane.setBorder(null);
 		scrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(8, Integer.MAX_VALUE));
+		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(SCROLLBAR_WIDTH, 0));
+		scrollPane.getVerticalScrollBar().setUnitIncrement(SCROLL_UNIT_INCREMENT);
 
 		add(scrollPane, BorderLayout.CENTER);
 
