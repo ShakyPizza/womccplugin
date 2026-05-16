@@ -14,13 +14,14 @@ repositories {
 }
 
 def runeLiteVersion = 'latest.release'
+def lombokVersion = '1.18.46'
 def pluginMainClass = 'com.womclan.WomClanPluginTest' // launcher class (loads WomClanPlugin)
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
 
-	compileOnly 'org.projectlombok:lombok:1.18.30'
-	annotationProcessor 'org.projectlombok:lombok:1.18.30'
+	compileOnly "org.projectlombok:lombok:${lombokVersion}"
+	annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
 	testImplementation 'junit:junit:4.12'
 	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
