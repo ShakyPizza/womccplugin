@@ -6,9 +6,12 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * A resizable standalone window showing the full clan member table
@@ -16,6 +19,8 @@ import java.util.List;
  */
 class WomExpandedWindow extends JFrame
 {
+	private static final NumberFormat INTEGER_FORMAT = NumberFormat.getIntegerInstance(Locale.US);
+
 	private final DefaultTableModel tableModel;
 	private final TableRowSorter<DefaultTableModel> sorter;
 
@@ -75,6 +80,20 @@ class WomExpandedWindow extends JFrame
 		table.getColumnModel().getColumn(3).setPreferredWidth(130);
 		table.getColumnModel().getColumn(4).setPreferredWidth(70);
 		table.getColumnModel().getColumn(5).setPreferredWidth(70);
+		table.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer()
+		{
+			{
+				setHorizontalAlignment(SwingConstants.RIGHT);
+			}
+
+			@Override
+			protected void setValue(Object value)
+			{
+				setText(value instanceof Number
+					? INTEGER_FORMAT.format(((Number) value).longValue())
+					: "");
+			}
+		});
 
 		add(new JScrollPane(table), BorderLayout.CENTER);
 
