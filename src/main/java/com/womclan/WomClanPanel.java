@@ -55,26 +55,33 @@ class WomClanPanel extends PluginPanel
 		syncButton = new JButton("Sync Now");
 		syncButton.setFont(FontManager.getRunescapeSmallFont());
 		syncButton.setFocusPainted(false);
+		styleHeaderButton(syncButton);
 		syncButton.setToolTipText("Fetch latest clan stats from WOM API");
 		syncButton.addActionListener(this::onSyncClicked);
 
 		statusLabel = new JLabel("Not synced yet");
 		statusLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		statusLabel.setFont(FontManager.getRunescapeSmallFont());
-		statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+		statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		statusLabel.setBorder(new EmptyBorder(6, 0, 0, 0));
 
 		JButton expandButton = new JButton("GUI");
 		expandButton.setFont(FontManager.getRunescapeSmallFont());
 		expandButton.setFocusPainted(false);
+		styleHeaderButton(expandButton);
 		expandButton.setToolTipText("Open GUI in a separate window");
 		expandButton.addActionListener(e -> openExpandedWindow());
 
-		JPanel topBar = new JPanel(new BorderLayout(6, 0));
+		JPanel buttonRow = new JPanel(new GridLayout(1, 2, 8, 0));
+		buttonRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		buttonRow.add(syncButton);
+		buttonRow.add(expandButton);
+
+		JPanel topBar = new JPanel(new BorderLayout());
 		topBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		topBar.setBorder(new EmptyBorder(8, 8, 6, 8));
-		topBar.add(syncButton, BorderLayout.WEST);
-		topBar.add(statusLabel, BorderLayout.CENTER);
-		topBar.add(expandButton, BorderLayout.EAST);
+		topBar.add(buttonRow, BorderLayout.NORTH);
+		topBar.add(statusLabel, BorderLayout.SOUTH);
 
 		// ── Search field ───────────────────────────────────────────────────────
 		searchField = new JTextField();
@@ -135,6 +142,17 @@ class WomClanPanel extends PluginPanel
 	}
 
 	// ── Sync button handler ────────────────────────────────────────────────────
+
+	private void styleHeaderButton(JButton button)
+	{
+		button.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		button.setForeground(Color.WHITE);
+		button.setOpaque(true);
+		button.setContentAreaFilled(true);
+		button.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR),
+			new EmptyBorder(4, 10, 4, 10)));
+	}
 
 	private void onSyncClicked(ActionEvent e)
 	{
