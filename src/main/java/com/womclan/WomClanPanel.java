@@ -47,6 +47,7 @@ class WomClanPanel extends PluginPanel
 	private List<WomMember> allMembers = new ArrayList<>();
 	private List<WomAchievement> allAchievements = new ArrayList<>();
 	private List<WomGroupActivity> allActivity = new ArrayList<>();
+	private List<WomNameChange> allNameChanges = new ArrayList<>();
 	private long lastManualSyncTime = 0;
 
 	private final ScheduledExecutorService cooldownExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -266,7 +267,7 @@ class WomClanPanel extends PluginPanel
 	/** Called on the EDT after a successful fetch. */
 	void updateMembers(List<WomMember> members)
 	{
-		updateClanData(new WomClanData(buildClanInfo(null, members), members, new ArrayList<>(), new ArrayList<>()));
+		updateClanData(new WomClanData(buildClanInfo(null, members), members, new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
 	}
 
 	/** Called on the EDT after a successful fetch. */
@@ -275,6 +276,7 @@ class WomClanPanel extends PluginPanel
 		allMembers = new ArrayList<>(clanData.getMembers());
 		allAchievements = new ArrayList<>(clanData.getAchievements());
 		allActivity = new ArrayList<>(clanData.getActivity());
+		allNameChanges = new ArrayList<>(clanData.getNameChanges());
 		allMembers.sort(Comparator.comparingLong(WomMember::getTotalXp).reversed());
 		updateClanInfo(clanData.getInfo() == null ? buildClanInfo(null, allMembers) : clanData.getInfo());
 		statusLabel.setText("Synced: just now");
@@ -284,7 +286,7 @@ class WomClanPanel extends PluginPanel
 
 		if (expandedWindow != null && expandedWindow.isVisible())
 		{
-			expandedWindow.setClanData(allMembers, allAchievements, allActivity);
+			expandedWindow.setClanData(allMembers, allAchievements, allActivity, allNameChanges);
 		}
 	}
 
@@ -321,7 +323,7 @@ class WomClanPanel extends PluginPanel
 		{
 			expandedWindow = new WomExpandedWindow();
 		}
-		expandedWindow.setClanData(allMembers, allAchievements, allActivity);
+		expandedWindow.setClanData(allMembers, allAchievements, allActivity, allNameChanges);
 		expandedWindow.setVisible(true);
 		expandedWindow.toFront();
 	}

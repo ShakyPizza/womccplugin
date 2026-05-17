@@ -11,4 +11,5 @@ public class WomClanData
 	List<WomMember> members;
 	List<WomAchievement> achievements;
 	List<WomGroupActivity> activity;
+	List<WomNameChange> nameChanges;
 }

@@ -12,7 +12,7 @@ It adds a RuneLite sidebar panel with your clan summary, a searchable member lis
 - Manual `Sync Now` button
 - Automatic refresh every 30 minutes, if enabled
 - Larger `GUI` window for sortable member stats
-- Recent achievements, joins, and leaves in the expanded window
+- Recent achievements, joins, leaves, and name changes in the expanded window
 
 ## Setup
 
@@ -59,7 +59,7 @@ The `Members` tab includes:
 
 You can sort the table columns and use the search field to filter members.
 
-The expanded window also includes tabs for recent achievements and recent group activity, including member joins and leaves.
+The expanded window also includes tabs for recent achievements, recent group activity, and the latest 50 clan name changes.
 
 ## Settings
 
