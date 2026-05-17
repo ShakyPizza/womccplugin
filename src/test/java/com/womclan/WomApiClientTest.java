@@ -35,6 +35,31 @@ public class WomApiClientTest
 	}
 
 	@Test
+	public void parseClanInfoReadsMetadataAndTotals() throws IOException
+	{
+		String json = "{"
+			+ "\"id\":2300,"
+			+ "\"name\":\"Wise Old Clan\","
+			+ "\"clanChat\":\"WOM CC\","
+			+ "\"memberCount\":2,"
+			+ "\"memberships\":["
+			+ "{\"player\":{\"username\":\"alpha\",\"displayName\":\"Alpha\",\"exp\":123,\"ehp\":1.5,\"ehb\":2.5}},"
+			+ "{\"player\":{\"username\":\"beta\",\"exp\":456,\"ehp\":3.5,\"ehb\":4.5}}"
+			+ "]"
+			+ "}";
+
+		List<WomMember> members = WomApiClient.parseMembers(json);
+		WomClanInfo info = WomApiClient.parseClanInfo(json, members);
+
+		assertEquals("Wise Old Clan", info.getName());
+		assertEquals("WOM CC", info.getClanChat());
+		assertEquals(2, info.getMemberCount());
+		assertEquals(579L, info.getTotalXp());
+		assertEquals(5.0, info.getTotalEhp(), 0.0);
+		assertEquals(7.0, info.getTotalEhb(), 0.0);
+	}
+
+	@Test
 	public void parseAchievementsReadsRecentMilestones() throws IOException
 	{
 		String json = "["

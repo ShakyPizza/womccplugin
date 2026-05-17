@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -34,7 +35,7 @@ class WomExpandedWindow extends JFrame
 
 	WomExpandedWindow()
 	{
-		super("WOM Clan Stats");
+		super("WiseOldMan Clan Stats");
 		setSize(850, 560);
 		setMinimumSize(new Dimension(620, 380));
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -47,7 +48,7 @@ class WomExpandedWindow extends JFrame
 		JTable memberTable = createTable(memberTableModel);
 		memberSorter = new TableRowSorter<>(memberTableModel);
 		memberTable.setRowSorter(memberSorter);
-		memberTable.getColumnModel().getColumn(0).setPreferredWidth(40);
+		memberTable.getColumnModel().getColumn(0).setPreferredWidth(20);
 		memberTable.getColumnModel().getColumn(1).setPreferredWidth(170);
 		memberTable.getColumnModel().getColumn(2).setPreferredWidth(120);
 		memberTable.getColumnModel().getColumn(3).setPreferredWidth(130);
@@ -57,6 +58,7 @@ class WomExpandedWindow extends JFrame
 
 		JTabbedPane tabs = new JTabbedPane();
 		tabs.addTab("Members", buildMembersTab(memberTable));
+		tabs.addTab("Achievements", buildAchievementTab());
 		tabs.addTab("Activity", buildActivityTab());
 		add(tabs, BorderLayout.CENTER);
 	}
@@ -70,9 +72,11 @@ class WomExpandedWindow extends JFrame
 	void setClanData(List<WomMember> members, List<WomAchievement> achievements, List<WomGroupActivity> activity)
 	{
 		memberTableModel.setRowCount(0);
-		for (int i = 0; i < members.size(); i++)
+		List<WomMember> sortedMembers = new ArrayList<>(members);
+		sortedMembers.sort(Comparator.comparingDouble(WomMember::getEhb).reversed());
+		for (int i = 0; i < sortedMembers.size(); i++)
 		{
-			WomMember m = members.get(i);
+			WomMember m = sortedMembers.get(i);
 			memberTableModel.addRow(new Object[]{
 				i + 1,
 				m.getDisplayName(),
@@ -144,6 +148,20 @@ class WomExpandedWindow extends JFrame
 
 	private JPanel buildActivityTab()
 	{
+		JTable activityTable = createTable(activityTableModel);
+		activityTable.setRowSorter(new TableRowSorter<>(activityTableModel));
+		activityTable.getColumnModel().getColumn(0).setPreferredWidth(115);
+		activityTable.getColumnModel().getColumn(1).setPreferredWidth(180);
+		activityTable.getColumnModel().getColumn(2).setPreferredWidth(100);
+		activityTable.getColumnModel().getColumn(3).setPreferredWidth(110);
+
+		JPanel panel = new JPanel(new BorderLayout(0, 0));
+		panel.add(wrapTable("Recent Activity", activityTable), BorderLayout.CENTER);
+		return panel;
+	}
+
+	private JPanel buildAchievementTab()
+	{
 		JTable achievementTable = createTable(achievementTableModel);
 		achievementTable.setRowSorter(new TableRowSorter<>(achievementTableModel));
 		achievementTable.getColumnModel().getColumn(0).setPreferredWidth(115);
@@ -152,23 +170,8 @@ class WomExpandedWindow extends JFrame
 		achievementTable.getColumnModel().getColumn(3).setPreferredWidth(130);
 		achievementTable.getColumnModel().getColumn(4).setPreferredWidth(90);
 
-		JTable activityTable = createTable(activityTableModel);
-		activityTable.setRowSorter(new TableRowSorter<>(activityTableModel));
-		activityTable.getColumnModel().getColumn(0).setPreferredWidth(115);
-		activityTable.getColumnModel().getColumn(1).setPreferredWidth(180);
-		activityTable.getColumnModel().getColumn(2).setPreferredWidth(100);
-		activityTable.getColumnModel().getColumn(3).setPreferredWidth(110);
-
-		JSplitPane splitPane = new JSplitPane(
-			JSplitPane.VERTICAL_SPLIT,
-			wrapTable("Recent Achievements", achievementTable),
-			wrapTable("Joins / Leaves", activityTable)
-		);
-		splitPane.setResizeWeight(0.65);
-		splitPane.setBorder(null);
-
 		JPanel panel = new JPanel(new BorderLayout(0, 0));
-		panel.add(splitPane, BorderLayout.CENTER);
+		panel.add(wrapTable("Recent Achievements", achievementTable), BorderLayout.CENTER);
 		return panel;
 	}
 
