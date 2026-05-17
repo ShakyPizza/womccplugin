@@ -22,6 +22,7 @@ public class WomApiClient
 {
 	private static final String API_BASE = "https://api.wiseoldman.net/v2";
 	private static final int ACTIVITY_LIMIT = 20;
+	private static final int NAME_CHANGE_LIMIT = 20;
 
 	@Inject
 	private OkHttpClient okHttpClient;
@@ -36,7 +37,8 @@ public class WomApiClient
 			parseClanInfo(body, members),
 			members,
 			fetchAchievementsOrEmpty(groupId),
-			fetchActivityOrEmpty(groupId)
+			fetchActivityOrEmpty(groupId),
+			fetchNameChangesOrEmpty(groupId)
 		);
 	}
 
@@ -80,6 +82,18 @@ public class WomApiClient
 		return activity;
 	}
 
+	public List<WomNameChange> fetchNameChanges(int groupId) throws IOException
+	{
+		String body = fetchBody(
+			API_BASE + "/groups/" + groupId + "/name-changes?limit=" + NAME_CHANGE_LIMIT,
+			"group name changes " + groupId
+		);
+		List<WomNameChange> nameChanges = parseNameChanges(body);
+
+		log.debug("Fetched {} name changes for group {}", nameChanges.size(), groupId);
+		return nameChanges;
+	}
+
 	private List<WomAchievement> fetchAchievementsOrEmpty(int groupId)
 	{
 		try
@@ -102,6 +116,19 @@ public class WomApiClient
 		catch (IOException e)
 		{
 			log.warn("WOM Clan Stats: failed to fetch activity for group {}: {}", groupId, e.getMessage());
+			return new ArrayList<>();
+		}
+	}
+
+	private List<WomNameChange> fetchNameChangesOrEmpty(int groupId)
+	{
+		try
+		{
+			return fetchNameChanges(groupId);
+		}
+		catch (IOException e)
+		{
+			log.warn("WOM Clan Stats: failed to fetch name changes for group {}: {}", groupId, e.getMessage());
 			return new ArrayList<>();
 		}
 	}
@@ -226,6 +253,35 @@ public class WomApiClient
 		}
 
 		return activity;
+	}
+
+	static List<WomNameChange> parseNameChanges(String body) throws IOException
+	{
+		JsonArray root = new JsonParser().parse(body).getAsJsonArray();
+
+		List<WomNameChange> nameChanges = new ArrayList<>();
+		for (JsonElement elem : root)
+		{
+			JsonObject obj = elem.getAsJsonObject();
+			String oldName = readString(obj, "oldName", "");
+			String newName = readString(obj, "newName", "");
+			String displayName = readPlayerDisplayName(obj);
+			if (displayName == null)
+			{
+				displayName = newName.isEmpty() ? oldName : newName;
+			}
+
+			nameChanges.add(new WomNameChange(
+				displayName,
+				oldName,
+				newName,
+				readString(obj, "status", ""),
+				readInstant(obj, "resolvedAt"),
+				readInstant(obj, "createdAt")
+			));
+		}
+
+		return nameChanges;
 	}
 
 	private String fetchBody(String url, String context) throws IOException

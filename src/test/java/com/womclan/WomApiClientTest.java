@@ -113,4 +113,38 @@ public class WomApiClientTest
 		assertEquals("changed_role", activity.get(1).getType());
 		assertEquals("iron", activity.get(1).getRole());
 	}
+
+	@Test
+	public void parseNameChangesReadsRecentGroupNameChanges() throws IOException
+	{
+		String json = "["
+			+ "{"
+			+ "\"oldName\":\"Old Alpha\","
+			+ "\"newName\":\"New Alpha\","
+			+ "\"status\":\"approved\","
+			+ "\"resolvedAt\":\"2024-01-02T03:04:05.000Z\","
+			+ "\"createdAt\":\"2024-01-01T03:04:05.000Z\","
+			+ "\"player\":{\"username\":\"new alpha\",\"displayName\":\"New Alpha\"}"
+			+ "},"
+			+ "{"
+			+ "\"oldName\":\"Old Beta\","
+			+ "\"newName\":\"New Beta\","
+			+ "\"status\":\"pending\","
+			+ "\"resolvedAt\":null,"
+			+ "\"createdAt\":\"2024-02-01T03:04:05.000Z\""
+			+ "}"
+			+ "]";
+
+		List<WomNameChange> nameChanges = WomApiClient.parseNameChanges(json);
+
+		assertEquals(2, nameChanges.size());
+		assertEquals("New Alpha", nameChanges.get(0).getDisplayName());
+		assertEquals("Old Alpha", nameChanges.get(0).getOldName());
+		assertEquals("New Alpha", nameChanges.get(0).getNewName());
+		assertEquals("approved", nameChanges.get(0).getStatus());
+		assertEquals(Instant.parse("2024-01-02T03:04:05.000Z"), nameChanges.get(0).getResolvedAt());
+		assertEquals(Instant.parse("2024-01-01T03:04:05.000Z"), nameChanges.get(0).getCreatedAt());
+		assertEquals("New Beta", nameChanges.get(1).getDisplayName());
+		assertEquals("pending", nameChanges.get(1).getStatus());
+	}
 }
