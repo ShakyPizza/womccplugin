@@ -1,132 +1,112 @@
 # WOM Clan Stats
 
-`WOM Clan Stats` is a RuneLite plugin that syncs a Wise Old Man group into the client and displays the member list in a sidebar panel, with an optional expanded desktop window for the full table view.
+WOM Clan Stats brings your Wise Old Man group into RuneLite so you can keep an eye on clan members without leaving the client.
 
-## What It Does
+It adds a RuneLite sidebar panel with your clan summary, a searchable member list, manual syncing, automatic refreshes, and an optional larger window for sortable tables and recent activity.
 
-The plugin adds a navigation button to RuneLite and reads clan data from the Wise Old Man group endpoint:
+## Overview
 
-- `GET https://api.wiseoldman.net/v2/groups/{groupId}`
-- `GET https://api.wiseoldman.net/v2/groups/{groupId}/achievements?limit=20`
-- `GET https://api.wiseoldman.net/v2/groups/{groupId}/activity?limit=20`
-- Parses the group's `memberships` array
-- Extracts each member's display name, role, total XP, EHP, and EHB
-- Extracts recent achievement milestones and recent member joins/leaves for the expanded window
+- Clan overview with name, clan chat, member count, total XP, total EHP, and total EHB
+- Searchable member list in the RuneLite sidebar
+- Member roles shown next to each player
+- Manual `Sync Now` button
+- Automatic refresh every 30 minutes, if enabled
+- Larger `GUI` window for sortable member stats
+- Recent achievements, joins, and leaves in the expanded window
 
-## Features
+## Setup
 
-- Sidebar panel with a searchable member list
-- Members sorted by total XP descending after each sync
-- Member roles shown directly in the sidebar
-- Manual `Sync Now` action with a 5 minute cooldown
-- Optional automatic refresh every 30 minutes
-- Separate `GUI` window with a sortable table view
-- Expanded window activity tab with recent achievements and member joins/leaves
-- Graceful handling for missing display names or missing stat fields
+1. Open your clan or group on [Wise Old Man](https://wiseoldman.net).
+2. Copy the numeric group ID from the URL.
+3. Open RuneLite settings.
+4. Find `WOM Clan Stats`.
+5. Paste the ID into `WOM Group ID`.
+6. Open the WOM Clan Stats sidebar and click `Sync Now`.
 
-## UI Behavior
+For example, if the Wise Old Man URL ends with `/groups/2300`, your group ID is `2300`.
 
-### Sidebar panel
+## Using The Sidebar
 
-The main RuneLite panel includes:
+The sidebar is the main view for day-to-day use.
 
-- `Sync Now` button
-- Current sync status label
-- Search field for member name filtering
-- Scrollable member list
-- `GUI` button that opens the expanded window
+At the top, you can:
 
-If no group ID is configured, the panel stays in a placeholder state until one is provided. If a sync fails, the panel surfaces the API error and prompts the user to verify the group ID and connection.
+- Click `Sync Now` to fetch the latest Wise Old Man data
+- Open the larger table view with `Open GUI`
+- See whether the plugin has synced recently
 
-### Expanded window
+Below that, the clan summary shows:
 
-The standalone window has a `Members` tab with the full dataset in a table with these columns:
+- Members
+- XP
+- EHP
+- EHB
 
-- `#`
-- `Name`
-- `Role`
-- `Total XP`
-- `EHP`
-- `EHB`
+The search bar filters the member list by player name. The list updates as you type.
 
-The table supports:
+## Expanded Window
 
-- Column sorting
-- Name filtering through a separate search field
-- Resizable desktop window layout
+Click `Open GUI` to open a separate window with more detailed tables.
 
-It also has an `Activity` tab with:
+The `Members` tab includes:
 
-- Recent group achievements
-- Recent member joins and leaves
+- Rank
+- Name
+- Role
+- Total XP
+- EHP
+- EHB
 
-## Configuration
+You can sort the table columns and use the search field to filter members.
 
-The plugin exposes two RuneLite config entries:
+The expanded window also includes tabs for recent achievements and recent group activity, including member joins and leaves.
 
-| Setting | Description |
+## Settings
+
+| Setting | What it does |
 |---|---|
-| `WOM Group ID` | Wise Old Man group ID to sync |
-| `Auto-refresh (every 30 min)` | Enables background refresh while RuneLite is running |
+| `WOM Group ID` | The Wise Old Man group to sync |
+| `Auto-refresh (every 30 min)` | Automatically refreshes data while RuneLite is running |
 
-To find the group ID, open your group on [wiseoldman.net](https://wiseoldman.net) and copy the numeric ID from the URL.
+Auto-refresh is enabled by default. You can still use `Sync Now` whenever you want an immediate update, subject to the 5 minute manual sync cooldown.
 
-## Project Layout
+## Troubleshooting
 
-- `src/main/java/com/womclan/WomClanPlugin.java`: plugin lifecycle, navigation button, refresh scheduling
-- `src/main/java/com/womclan/WomClanPanel.java`: sidebar UI, search, cooldown, placeholder/error states
-- `src/main/java/com/womclan/WomExpandedWindow.java`: standalone sortable table window
-- `src/main/java/com/womclan/WomApiClient.java`: WOM API fetch and JSON parsing
-- `src/main/java/com/womclan/WomMember.java`: immutable member model
-- `src/main/java/com/womclan/WomAchievement.java`: immutable achievement model
-- `src/main/java/com/womclan/WomGroupActivity.java`: immutable group activity model
-- `src/main/java/com/womclan/WomClanData.java`: immutable sync result model
-- `src/main/java/com/womclan/WomMemberPanel.java`: sidebar row rendering
-- `src/main/java/com/womclan/WomClanConfig.java`: RuneLite config items
-- `src/test/java/com/womclan/WomApiClientTest.java`: parser coverage for WOM group response shape
-- `src/test/java/com/womclan/WomClanPluginTest.java`: local RuneLite launcher entrypoint
-- `runelite-plugin.properties`: plugin metadata
+If the panel says `Set Group ID in config`, add your Wise Old Man group ID in the plugin settings.
+
+If syncing fails, check that:
+
+- The group ID is correct
+- Wise Old Man is reachable
+- RuneLite has an internet connection
+- The group exists on Wise Old Man
+
+If the member list is empty after syncing, confirm that the Wise Old Man group has members listed on the website.
 
 ## Local Development
 
-### Requirements
+This section is only needed if you are building or testing the plugin from source.
 
-- Java 11
-- Gradle wrapper included in the repository
-
-### Run in RuneLite developer mode
+Run the plugin in RuneLite developer mode:
 
 ```bash
 ./gradlew run
 ```
 
-This launches RuneLite with:
-
-- developer mode enabled
-- debug logging enabled
-- RuneLite auto-update disabled for local iteration
-
-### Run tests
+Run tests:
 
 ```bash
 ./gradlew test
 ```
 
-### Build the project
+Build the project:
 
 ```bash
 ./gradlew build
 ```
 
-### Build a fat jar
+Build a fat jar:
 
 ```bash
 ./gradlew shadowJar
 ```
-
-The generated artifact uses the Gradle root project name from `settings.gradle`, currently `wom-clan-stats`.
-
-## Notes
-
-- Automated coverage is currently limited to WOM response parsing
-- The plugin depends on RuneLite client APIs and Swing UI components provided by RuneLite
