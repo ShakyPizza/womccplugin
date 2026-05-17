@@ -76,7 +76,7 @@ class WomClanPanel extends PluginPanel
 		statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		statusLabel.setBorder(new EmptyBorder(6, 0, 0, 0));
 
-		JButton expandButton = new JButton("OPEN GUI");
+		JButton expandButton = new JButton("Open GUI");
 		expandButton.setFont(FontManager.getRunescapeSmallFont());
 		expandButton.setFocusPainted(false);
 		styleHeaderButton(expandButton);
