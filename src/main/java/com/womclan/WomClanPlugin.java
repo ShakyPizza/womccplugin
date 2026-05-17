@@ -15,7 +15,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -144,8 +143,8 @@ public class WomClanPlugin extends Plugin
 
 		try
 		{
-			List<WomMember> members = apiClient.fetchMembers(groupId);
-			SwingUtilities.invokeLater(() -> panel.updateMembers(members));
+			WomClanData clanData = apiClient.fetchClanData(groupId);
+			SwingUtilities.invokeLater(() -> panel.updateClanData(clanData));
 		}
 		catch (IOException e)
 		{

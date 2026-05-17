@@ -7,8 +7,11 @@
 The plugin adds a navigation button to RuneLite and reads clan data from the Wise Old Man group endpoint:
 
 - `GET https://api.wiseoldman.net/v2/groups/{groupId}`
+- `GET https://api.wiseoldman.net/v2/groups/{groupId}/achievements?limit=20`
+- `GET https://api.wiseoldman.net/v2/groups/{groupId}/activity?limit=20`
 - Parses the group's `memberships` array
 - Extracts each member's display name, role, total XP, EHP, and EHB
+- Extracts recent achievement milestones and recent member joins/leaves for the expanded window
 
 ## Features
 
@@ -18,6 +21,7 @@ The plugin adds a navigation button to RuneLite and reads clan data from the Wis
 - Manual `Sync Now` action with a 5 minute cooldown
 - Optional automatic refresh every 30 minutes
 - Separate `GUI` window with a sortable table view
+- Expanded window activity tab with recent achievements and member joins/leaves
 - Graceful handling for missing display names or missing stat fields
 
 ## UI Behavior
@@ -36,7 +40,7 @@ If no group ID is configured, the panel stays in a placeholder state until one i
 
 ### Expanded window
 
-The standalone window shows the full dataset in a table with these columns:
+The standalone window has a `Members` tab with the full dataset in a table with these columns:
 
 - `#`
 - `Name`
@@ -50,6 +54,11 @@ The table supports:
 - Column sorting
 - Name filtering through a separate search field
 - Resizable desktop window layout
+
+It also has an `Activity` tab with:
+
+- Recent group achievements
+- Recent member joins and leaves
 
 ## Configuration
 
@@ -69,6 +78,9 @@ To find the group ID, open your group on [wiseoldman.net](https://wiseoldman.net
 - `src/main/java/com/womclan/WomExpandedWindow.java`: standalone sortable table window
 - `src/main/java/com/womclan/WomApiClient.java`: WOM API fetch and JSON parsing
 - `src/main/java/com/womclan/WomMember.java`: immutable member model
+- `src/main/java/com/womclan/WomAchievement.java`: immutable achievement model
+- `src/main/java/com/womclan/WomGroupActivity.java`: immutable group activity model
+- `src/main/java/com/womclan/WomClanData.java`: immutable sync result model
 - `src/main/java/com/womclan/WomMemberPanel.java`: sidebar row rendering
 - `src/main/java/com/womclan/WomClanConfig.java`: RuneLite config items
 - `src/test/java/com/womclan/WomApiClientTest.java`: parser coverage for WOM group response shape

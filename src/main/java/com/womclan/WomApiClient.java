@@ -12,6 +12,8 @@ import okhttp3.ResponseBody;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,9 +21,19 @@ import java.util.List;
 public class WomApiClient
 {
 	private static final String API_BASE = "https://api.wiseoldman.net/v2";
+	private static final int ACTIVITY_LIMIT = 20;
 
 	@Inject
 	private OkHttpClient okHttpClient;
+
+	public WomClanData fetchClanData(int groupId) throws IOException
+	{
+		return new WomClanData(
+			fetchMembers(groupId),
+			fetchAchievementsOrEmpty(groupId),
+			fetchActivityOrEmpty(groupId)
+		);
+	}
 
 	/**
 	 * Fetches all members of a WOM group and their stats.
@@ -32,31 +44,60 @@ public class WomApiClient
 	 */
 	public List<WomMember> fetchMembers(int groupId) throws IOException
 	{
-		String url = API_BASE + "/groups/" + groupId;
+		String body = fetchBody(API_BASE + "/groups/" + groupId, "group " + groupId);
+		List<WomMember> members = parseMembers(body);
 
-		Request request = new Request.Builder()
-			.url(url)
-			.header("User-Agent", "WomClanStats-RuneLitePlugin/1.0")
-			.build();
+		log.debug("Fetched {} members for group {}", members.size(), groupId);
+		return members;
+	}
 
-		try (Response response = okHttpClient.newCall(request).execute())
+	public List<WomAchievement> fetchAchievements(int groupId) throws IOException
+	{
+		String body = fetchBody(
+			API_BASE + "/groups/" + groupId + "/achievements?limit=" + ACTIVITY_LIMIT,
+			"group achievements " + groupId
+		);
+		List<WomAchievement> achievements = parseAchievements(body);
+
+		log.debug("Fetched {} achievements for group {}", achievements.size(), groupId);
+		return achievements;
+	}
+
+	public List<WomGroupActivity> fetchActivity(int groupId) throws IOException
+	{
+		String body = fetchBody(
+			API_BASE + "/groups/" + groupId + "/activity?limit=" + ACTIVITY_LIMIT,
+			"group activity " + groupId
+		);
+		List<WomGroupActivity> activity = parseActivity(body);
+
+		log.debug("Fetched {} activity entries for group {}", activity.size(), groupId);
+		return activity;
+	}
+
+	private List<WomAchievement> fetchAchievementsOrEmpty(int groupId)
+	{
+		try
 		{
-			if (!response.isSuccessful())
-			{
-				throw new IOException("WOM API error " + response.code() + " for group " + groupId);
-			}
+			return fetchAchievements(groupId);
+		}
+		catch (IOException e)
+		{
+			log.warn("WOM Clan Stats: failed to fetch achievements for group {}: {}", groupId, e.getMessage());
+			return new ArrayList<>();
+		}
+	}
 
-			ResponseBody responseBody = response.body();
-			if (responseBody == null)
-			{
-				throw new IOException("Empty response body from WOM API for group " + groupId);
-			}
-
-			String body = responseBody.string();
-			List<WomMember> members = parseMembers(body);
-
-			log.debug("Fetched {} members for group {}", members.size(), groupId);
-			return members;
+	private List<WomGroupActivity> fetchActivityOrEmpty(int groupId)
+	{
+		try
+		{
+			return fetchActivity(groupId);
+		}
+		catch (IOException e)
+		{
+			log.warn("WOM Clan Stats: failed to fetch activity for group {}: {}", groupId, e.getMessage());
+			return new ArrayList<>();
 		}
 	}
 
@@ -106,5 +147,130 @@ public class WomApiClient
 		}
 
 		return members;
+	}
+
+	static List<WomAchievement> parseAchievements(String body) throws IOException
+	{
+		JsonArray root = new JsonParser().parse(body).getAsJsonArray();
+
+		List<WomAchievement> achievements = new ArrayList<>();
+		for (JsonElement elem : root)
+		{
+			JsonObject obj = elem.getAsJsonObject();
+			String displayName = readPlayerDisplayName(obj);
+			if (displayName == null)
+			{
+				continue;
+			}
+
+			achievements.add(new WomAchievement(
+				displayName,
+				readString(obj, "name", "Achievement"),
+				readString(obj, "metric", ""),
+				readString(obj, "measure", ""),
+				readLong(obj, "threshold", 0L),
+				readInstant(obj, "createdAt")
+			));
+		}
+
+		return achievements;
+	}
+
+	static List<WomGroupActivity> parseActivity(String body) throws IOException
+	{
+		JsonArray root = new JsonParser().parse(body).getAsJsonArray();
+
+		List<WomGroupActivity> activity = new ArrayList<>();
+		for (JsonElement elem : root)
+		{
+			JsonObject obj = elem.getAsJsonObject();
+			String displayName = readPlayerDisplayName(obj);
+			if (displayName == null)
+			{
+				continue;
+			}
+
+			activity.add(new WomGroupActivity(
+				displayName,
+				readString(obj, "type", ""),
+				readString(obj, "role", ""),
+				readInstant(obj, "createdAt")
+			));
+		}
+
+		return activity;
+	}
+
+	private String fetchBody(String url, String context) throws IOException
+	{
+		Request request = new Request.Builder()
+			.url(url)
+			.header("User-Agent", "WomClanStats-RuneLitePlugin/1.0")
+			.build();
+
+		try (Response response = okHttpClient.newCall(request).execute())
+		{
+			if (!response.isSuccessful())
+			{
+				throw new IOException("WOM API error " + response.code() + " for " + context);
+			}
+
+			ResponseBody responseBody = response.body();
+			if (responseBody == null)
+			{
+				throw new IOException("Empty response body from WOM API for " + context);
+			}
+
+			return responseBody.string();
+		}
+	}
+
+	private static String readPlayerDisplayName(JsonObject obj)
+	{
+		if (!obj.has("player") || obj.get("player").isJsonNull())
+		{
+			return null;
+		}
+
+		JsonObject player = obj.getAsJsonObject("player");
+		if (!player.has("username") || player.get("username").isJsonNull())
+		{
+			return null;
+		}
+
+		return player.has("displayName") && !player.get("displayName").isJsonNull()
+			? player.get("displayName").getAsString()
+			: player.get("username").getAsString();
+	}
+
+	private static String readString(JsonObject obj, String field, String defaultValue)
+	{
+		return obj.has(field) && !obj.get(field).isJsonNull()
+			? obj.get(field).getAsString()
+			: defaultValue;
+	}
+
+	private static long readLong(JsonObject obj, String field, long defaultValue)
+	{
+		return obj.has(field) && !obj.get(field).isJsonNull()
+			? obj.get(field).getAsLong()
+			: defaultValue;
+	}
+
+	private static Instant readInstant(JsonObject obj, String field)
+	{
+		if (!obj.has(field) || obj.get(field).isJsonNull())
+		{
+			return null;
+		}
+
+		try
+		{
+			return Instant.parse(obj.get(field).getAsString());
+		}
+		catch (DateTimeParseException e)
+		{
+			return null;
+		}
 	}
 }

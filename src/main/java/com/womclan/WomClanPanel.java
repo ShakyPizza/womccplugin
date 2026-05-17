@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 class WomClanPanel extends PluginPanel
 {
 	private static final long COOLDOWN_MS = 5 * 60 * 1_000L;
+	private static final int SCROLLBAR_WIDTH = 8;
+	private static final int SCROLL_UNIT_INCREMENT = 16;
 
 	private final WomClanPlugin plugin;
 
@@ -34,6 +36,8 @@ class WomClanPanel extends PluginPanel
 	private final JPanel memberListPanel;
 
 	private List<WomMember> allMembers = new ArrayList<>();
+	private List<WomAchievement> allAchievements = new ArrayList<>();
+	private List<WomGroupActivity> allActivity = new ArrayList<>();
 	private long lastManualSyncTime = 0;
 
 	private final ScheduledExecutorService cooldownExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -43,6 +47,7 @@ class WomClanPanel extends PluginPanel
 
 	WomClanPanel(WomClanPlugin plugin)
 	{
+		super(false);
 		this.plugin = plugin;
 
 		setLayout(new BorderLayout(0, 0));
@@ -52,26 +57,33 @@ class WomClanPanel extends PluginPanel
 		syncButton = new JButton("Sync Now");
 		syncButton.setFont(FontManager.getRunescapeSmallFont());
 		syncButton.setFocusPainted(false);
+		styleHeaderButton(syncButton);
 		syncButton.setToolTipText("Fetch latest clan stats from WOM API");
 		syncButton.addActionListener(this::onSyncClicked);
 
 		statusLabel = new JLabel("Not synced yet");
 		statusLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		statusLabel.setFont(FontManager.getRunescapeSmallFont());
-		statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+		statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		statusLabel.setBorder(new EmptyBorder(6, 0, 0, 0));
 
 		JButton expandButton = new JButton("GUI");
 		expandButton.setFont(FontManager.getRunescapeSmallFont());
 		expandButton.setFocusPainted(false);
+		styleHeaderButton(expandButton);
 		expandButton.setToolTipText("Open GUI in a separate window");
 		expandButton.addActionListener(e -> openExpandedWindow());
 
-		JPanel topBar = new JPanel(new BorderLayout(6, 0));
+		JPanel buttonRow = new JPanel(new GridLayout(1, 2, 8, 0));
+		buttonRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		buttonRow.add(syncButton);
+		buttonRow.add(expandButton);
+
+		JPanel topBar = new JPanel(new BorderLayout());
 		topBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		topBar.setBorder(new EmptyBorder(8, 8, 6, 8));
-		topBar.add(syncButton, BorderLayout.WEST);
-		topBar.add(statusLabel, BorderLayout.CENTER);
-		topBar.add(expandButton, BorderLayout.EAST);
+		topBar.add(buttonRow, BorderLayout.NORTH);
+		topBar.add(statusLabel, BorderLayout.SOUTH);
 
 		// ── Search field ───────────────────────────────────────────────────────
 		searchField = new JTextField();
@@ -121,7 +133,10 @@ class WomClanPanel extends PluginPanel
 		JScrollPane scrollPane = new JScrollPane(memberListPanel);
 		scrollPane.setBorder(null);
 		scrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(8, Integer.MAX_VALUE));
+		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(SCROLLBAR_WIDTH, 0));
+		scrollPane.getVerticalScrollBar().setUnitIncrement(SCROLL_UNIT_INCREMENT);
 
 		add(scrollPane, BorderLayout.CENTER);
 
@@ -129,6 +144,17 @@ class WomClanPanel extends PluginPanel
 	}
 
 	// ── Sync button handler ────────────────────────────────────────────────────
+
+	private void styleHeaderButton(JButton button)
+	{
+		button.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		button.setForeground(Color.WHITE);
+		button.setOpaque(true);
+		button.setContentAreaFilled(true);
+		button.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR),
+			new EmptyBorder(4, 10, 4, 10)));
+	}
 
 	private void onSyncClicked(ActionEvent e)
 	{
@@ -187,7 +213,15 @@ class WomClanPanel extends PluginPanel
 	/** Called on the EDT after a successful fetch. */
 	void updateMembers(List<WomMember> members)
 	{
-		allMembers = new ArrayList<>(members);
+		updateClanData(new WomClanData(members, new ArrayList<>(), new ArrayList<>()));
+	}
+
+	/** Called on the EDT after a successful fetch. */
+	void updateClanData(WomClanData clanData)
+	{
+		allMembers = new ArrayList<>(clanData.getMembers());
+		allAchievements = new ArrayList<>(clanData.getAchievements());
+		allActivity = new ArrayList<>(clanData.getActivity());
 		allMembers.sort(Comparator.comparingLong(WomMember::getTotalXp).reversed());
 		statusLabel.setText("Synced: just now");
 		syncButton.setEnabled(true);
@@ -196,7 +230,7 @@ class WomClanPanel extends PluginPanel
 
 		if (expandedWindow != null && expandedWindow.isVisible())
 		{
-			expandedWindow.setMembers(allMembers);
+			expandedWindow.setClanData(allMembers, allAchievements, allActivity);
 		}
 	}
 
@@ -232,7 +266,7 @@ class WomClanPanel extends PluginPanel
 		{
 			expandedWindow = new WomExpandedWindow();
 		}
-		expandedWindow.setMembers(allMembers);
+		expandedWindow.setClanData(allMembers, allAchievements, allActivity);
 		expandedWindow.setVisible(true);
 		expandedWindow.toFront();
 	}
