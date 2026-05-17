@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -71,9 +72,11 @@ class WomExpandedWindow extends JFrame
 	void setClanData(List<WomMember> members, List<WomAchievement> achievements, List<WomGroupActivity> activity)
 	{
 		memberTableModel.setRowCount(0);
-		for (int i = 0; i < members.size(); i++)
+		List<WomMember> sortedMembers = new ArrayList<>(members);
+		sortedMembers.sort(Comparator.comparingDouble(WomMember::getEhb).reversed());
+		for (int i = 0; i < sortedMembers.size(); i++)
 		{
-			WomMember m = members.get(i);
+			WomMember m = sortedMembers.get(i);
 			memberTableModel.addRow(new Object[]{
 				i + 1,
 				m.getDisplayName(),
