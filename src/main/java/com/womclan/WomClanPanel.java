@@ -36,6 +36,8 @@ class WomClanPanel extends PluginPanel
 	private final JPanel memberListPanel;
 
 	private List<WomMember> allMembers = new ArrayList<>();
+	private List<WomAchievement> allAchievements = new ArrayList<>();
+	private List<WomGroupActivity> allActivity = new ArrayList<>();
 	private long lastManualSyncTime = 0;
 
 	private final ScheduledExecutorService cooldownExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -211,7 +213,15 @@ class WomClanPanel extends PluginPanel
 	/** Called on the EDT after a successful fetch. */
 	void updateMembers(List<WomMember> members)
 	{
-		allMembers = new ArrayList<>(members);
+		updateClanData(new WomClanData(members, new ArrayList<>(), new ArrayList<>()));
+	}
+
+	/** Called on the EDT after a successful fetch. */
+	void updateClanData(WomClanData clanData)
+	{
+		allMembers = new ArrayList<>(clanData.getMembers());
+		allAchievements = new ArrayList<>(clanData.getAchievements());
+		allActivity = new ArrayList<>(clanData.getActivity());
 		allMembers.sort(Comparator.comparingLong(WomMember::getTotalXp).reversed());
 		statusLabel.setText("Synced: just now");
 		syncButton.setEnabled(true);
@@ -220,7 +230,7 @@ class WomClanPanel extends PluginPanel
 
 		if (expandedWindow != null && expandedWindow.isVisible())
 		{
-			expandedWindow.setMembers(allMembers);
+			expandedWindow.setClanData(allMembers, allAchievements, allActivity);
 		}
 	}
 
@@ -256,7 +266,7 @@ class WomClanPanel extends PluginPanel
 		{
 			expandedWindow = new WomExpandedWindow();
 		}
-		expandedWindow.setMembers(allMembers);
+		expandedWindow.setClanData(allMembers, allAchievements, allActivity);
 		expandedWindow.setVisible(true);
 		expandedWindow.toFront();
 	}
