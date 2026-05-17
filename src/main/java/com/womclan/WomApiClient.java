@@ -22,7 +22,8 @@ public class WomApiClient
 {
 	private static final String API_BASE = "https://api.wiseoldman.net/v2";
 	private static final int ACTIVITY_LIMIT = 50;
-	private static final int NAME_CHANGE_LIMIT = 20;
+	private static final int NAME_CHANGE_LIMIT = 50;
+	private static final long REQUEST_DELAY_MS = 750L;
 
 	@Inject
 	private OkHttpClient okHttpClient;
@@ -98,6 +99,7 @@ public class WomApiClient
 	{
 		try
 		{
+			delayBetweenRequests();
 			return fetchAchievements(groupId);
 		}
 		catch (IOException e)
@@ -111,6 +113,7 @@ public class WomApiClient
 	{
 		try
 		{
+			delayBetweenRequests();
 			return fetchActivity(groupId);
 		}
 		catch (IOException e)
@@ -124,12 +127,26 @@ public class WomApiClient
 	{
 		try
 		{
+			delayBetweenRequests();
 			return fetchNameChanges(groupId);
 		}
 		catch (IOException e)
 		{
 			log.warn("WOM Clan Stats: failed to fetch name changes for group {}: {}", groupId, e.getMessage());
 			return new ArrayList<>();
+		}
+	}
+
+	private void delayBetweenRequests() throws IOException
+	{
+		try
+		{
+			Thread.sleep(REQUEST_DELAY_MS);
+		}
+		catch (InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+			throw new IOException("Interrupted while spacing WOM API requests", e);
 		}
 	}
 
