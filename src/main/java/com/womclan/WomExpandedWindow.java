@@ -31,6 +31,7 @@ class WomExpandedWindow extends JFrame
 	private final DefaultTableModel memberTableModel;
 	private final DefaultTableModel achievementTableModel;
 	private final DefaultTableModel activityTableModel;
+	private final DefaultTableModel nameChangeTableModel;
 	private final TableRowSorter<DefaultTableModel> memberSorter;
 
 	WomExpandedWindow()
@@ -44,6 +45,7 @@ class WomExpandedWindow extends JFrame
 		memberTableModel = createMemberTableModel();
 		achievementTableModel = createAchievementTableModel();
 		activityTableModel = createActivityTableModel();
+		nameChangeTableModel = createNameChangeTableModel();
 
 		JTable memberTable = createTable(memberTableModel);
 		memberSorter = new TableRowSorter<>(memberTableModel);
@@ -60,16 +62,22 @@ class WomExpandedWindow extends JFrame
 		tabs.addTab("Members", buildMembersTab(memberTable));
 		tabs.addTab("Achievements", buildAchievementTab());
 		tabs.addTab("Activity", buildActivityTab());
+		tabs.addTab("Name Changes", buildNameChangeTab());
 		add(tabs, BorderLayout.CENTER);
 	}
 
 	/** Replaces the table contents with the given member list. */
 	void setMembers(List<WomMember> members)
 	{
-		setClanData(members, new ArrayList<>(), new ArrayList<>());
+		setClanData(members, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 	}
 
 	void setClanData(List<WomMember> members, List<WomAchievement> achievements, List<WomGroupActivity> activity)
+	{
+		setClanData(members, achievements, activity, new ArrayList<>());
+	}
+
+	void setClanData(List<WomMember> members, List<WomAchievement> achievements, List<WomGroupActivity> activity, List<WomNameChange> nameChanges)
 	{
 		memberTableModel.setRowCount(0);
 		List<WomMember> sortedMembers = new ArrayList<>(members);
@@ -112,6 +120,18 @@ class WomExpandedWindow extends JFrame
 				entry.getDisplayName(),
 				formatActivityType(entry.getType()),
 				formatRole(entry.getRole())
+			});
+		}
+
+		nameChangeTableModel.setRowCount(0);
+		for (WomNameChange nameChange : nameChanges)
+		{
+			nameChangeTableModel.addRow(new Object[]{
+				formatInstant(nameChange.getResolvedAt() == null ? nameChange.getCreatedAt() : nameChange.getResolvedAt()),
+				nameChange.getDisplayName(),
+				nameChange.getOldName(),
+				nameChange.getNewName(),
+				formatNameChangeStatus(nameChange.getStatus())
 			});
 		}
 	}
@@ -172,6 +192,21 @@ class WomExpandedWindow extends JFrame
 
 		JPanel panel = new JPanel(new BorderLayout(0, 0));
 		panel.add(wrapTable("Recent Achievements", achievementTable), BorderLayout.CENTER);
+		return panel;
+	}
+
+	private JPanel buildNameChangeTab()
+	{
+		JTable nameChangeTable = createTable(nameChangeTableModel);
+		nameChangeTable.setRowSorter(new TableRowSorter<>(nameChangeTableModel));
+		nameChangeTable.getColumnModel().getColumn(0).setPreferredWidth(115);
+		nameChangeTable.getColumnModel().getColumn(1).setPreferredWidth(140);
+		nameChangeTable.getColumnModel().getColumn(2).setPreferredWidth(140);
+		nameChangeTable.getColumnModel().getColumn(3).setPreferredWidth(140);
+		nameChangeTable.getColumnModel().getColumn(4).setPreferredWidth(90);
+
+		JPanel panel = new JPanel(new BorderLayout(0, 0));
+		panel.add(wrapTable("Recent Name Changes", nameChangeTable), BorderLayout.CENTER);
 		return panel;
 	}
 
@@ -245,6 +280,18 @@ class WomExpandedWindow extends JFrame
 		};
 	}
 
+	private DefaultTableModel createNameChangeTableModel()
+	{
+		return new DefaultTableModel(new String[]{"Resolved", "Player", "Old Name", "New Name", "Status"}, 0)
+		{
+			@Override
+			public boolean isCellEditable(int row, int col)
+			{
+				return false;
+			}
+		};
+	}
+
 	private String formatInstant(Instant instant)
 	{
 		return instant == null ? "" : DATE_FORMAT.format(instant);
@@ -271,6 +318,11 @@ class WomExpandedWindow extends JFrame
 			return "Changed Role";
 		}
 		return formatMetric(type);
+	}
+
+	private String formatNameChangeStatus(String status)
+	{
+		return formatMetric(status);
 	}
 
 	private String formatMetric(String metric)

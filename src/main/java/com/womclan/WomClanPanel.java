@@ -47,6 +47,7 @@ class WomClanPanel extends PluginPanel
 	private List<WomMember> allMembers = new ArrayList<>();
 	private List<WomAchievement> allAchievements = new ArrayList<>();
 	private List<WomGroupActivity> allActivity = new ArrayList<>();
+	private List<WomNameChange> allNameChanges = new ArrayList<>();
 	private long lastManualSyncTime = 0;
 
 	private final ScheduledExecutorService cooldownExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -266,25 +267,53 @@ class WomClanPanel extends PluginPanel
 	/** Called on the EDT after a successful fetch. */
 	void updateMembers(List<WomMember> members)
 	{
-		updateClanData(new WomClanData(buildClanInfo(null, members), members, new ArrayList<>(), new ArrayList<>()));
+		updateClanData(new WomClanData(buildClanInfo(null, members), members, new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
 	}
 
 	/** Called on the EDT after a successful fetch. */
 	void updateClanData(WomClanData clanData)
 	{
-		allMembers = new ArrayList<>(clanData.getMembers());
-		allAchievements = new ArrayList<>(clanData.getAchievements());
-		allActivity = new ArrayList<>(clanData.getActivity());
+		updateClanData(clanData, "Synced: just now");
+	}
+
+	/** Called on the EDT after loading persisted data. */
+	void updateCachedClanData(WomClanData clanData)
+	{
+		updateClanData(clanData, "Loaded cached data");
+	}
+
+	void clearClanData(String statusText)
+	{
+		allMembers = new ArrayList<>();
+		allAchievements = new ArrayList<>();
+		allActivity = new ArrayList<>();
+		allNameChanges = new ArrayList<>();
+		updateClanInfo(null);
+		statusLabel.setText(statusText);
+		filterMembers();
+
+		if (expandedWindow != null && expandedWindow.isVisible())
+		{
+			expandedWindow.setClanData(allMembers, allAchievements, allActivity, allNameChanges);
+		}
+	}
+
+	private void updateClanData(WomClanData clanData, String statusText)
+	{
+		allMembers = copyList(clanData.getMembers());
+		allAchievements = copyList(clanData.getAchievements());
+		allActivity = copyList(clanData.getActivity());
+		allNameChanges = copyList(clanData.getNameChanges());
 		allMembers.sort(Comparator.comparingLong(WomMember::getTotalXp).reversed());
 		updateClanInfo(clanData.getInfo() == null ? buildClanInfo(null, allMembers) : clanData.getInfo());
-		statusLabel.setText("Synced: just now");
+		statusLabel.setText(statusText);
 		syncButton.setEnabled(true);
 		syncButton.setText("Sync Now");
 		filterMembers();
 
 		if (expandedWindow != null && expandedWindow.isVisible())
 		{
-			expandedWindow.setClanData(allMembers, allAchievements, allActivity);
+			expandedWindow.setClanData(allMembers, allAchievements, allActivity, allNameChanges);
 		}
 	}
 
@@ -321,7 +350,7 @@ class WomClanPanel extends PluginPanel
 		{
 			expandedWindow = new WomExpandedWindow();
 		}
-		expandedWindow.setClanData(allMembers, allAchievements, allActivity);
+		expandedWindow.setClanData(allMembers, allAchievements, allActivity, allNameChanges);
 		expandedWindow.setVisible(true);
 		expandedWindow.toFront();
 	}
@@ -340,6 +369,11 @@ class WomClanPanel extends PluginPanel
 		}
 
 		rebuildList(filtered);
+	}
+
+	private <T> List<T> copyList(List<T> values)
+	{
+		return values == null ? new ArrayList<>() : new ArrayList<>(values);
 	}
 
 	private void updateClanInfo(WomClanInfo info)
