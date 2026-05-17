@@ -35,7 +35,7 @@ class WomExpandedWindow extends JFrame
 
 	WomExpandedWindow()
 	{
-		super("WOM Clan Stats");
+		super("WiseOldMan Clan Stats");
 		setSize(850, 560);
 		setMinimumSize(new Dimension(620, 380));
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);

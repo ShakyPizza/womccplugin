@@ -10,9 +10,11 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -27,10 +29,17 @@ class WomClanPanel extends PluginPanel
 	private static final long COOLDOWN_MS = 5 * 60 * 1_000L;
 	private static final int SCROLLBAR_WIDTH = 8;
 	private static final int SCROLL_UNIT_INCREMENT = 16;
+	private static final NumberFormat INTEGER_FORMAT = NumberFormat.getIntegerInstance(Locale.US);
 
 	private final WomClanPlugin plugin;
 
 	private final JLabel statusLabel;
+	private final JLabel clanNameLabel;
+	private final JLabel clanChatLabel;
+	private final JLabel memberCountLabel;
+	private final JLabel totalXpLabel;
+	private final JLabel totalEhpLabel;
+	private final JLabel totalEhbLabel;
 	private final JButton syncButton;
 	private final JTextField searchField;
 	private final JPanel memberListPanel;
@@ -67,7 +76,7 @@ class WomClanPanel extends PluginPanel
 		statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		statusLabel.setBorder(new EmptyBorder(6, 0, 0, 0));
 
-		JButton expandButton = new JButton("GUI");
+		JButton expandButton = new JButton("OPEN GUI");
 		expandButton.setFont(FontManager.getRunescapeSmallFont());
 		expandButton.setFocusPainted(false);
 		styleHeaderButton(expandButton);
@@ -84,6 +93,41 @@ class WomClanPanel extends PluginPanel
 		topBar.setBorder(new EmptyBorder(8, 8, 6, 8));
 		topBar.add(buttonRow, BorderLayout.NORTH);
 		topBar.add(statusLabel, BorderLayout.SOUTH);
+
+		// ── Clan summary ───────────────────────────────────────────────────────
+		clanNameLabel = new JLabel("Clan");
+		clanNameLabel.setFont(FontManager.getRunescapeBoldFont());
+		clanNameLabel.setForeground(Color.YELLOW);
+
+		clanChatLabel = new JLabel("No clan data loaded");
+		clanChatLabel.setFont(FontManager.getRunescapeSmallFont());
+		clanChatLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+
+		JPanel clanTitlePanel = new JPanel();
+		clanTitlePanel.setLayout(new BoxLayout(clanTitlePanel, BoxLayout.Y_AXIS));
+		clanTitlePanel.setOpaque(false);
+		clanTitlePanel.add(clanNameLabel);
+		clanTitlePanel.add(clanChatLabel);
+
+		memberCountLabel = createClanStatLabel();
+		totalXpLabel = createClanStatLabel();
+		totalEhpLabel = createClanStatLabel();
+		totalEhbLabel = createClanStatLabel();
+
+		JPanel statsPanel = new JPanel(new GridLayout(2, 2, 8, 2));
+		statsPanel.setOpaque(false);
+		statsPanel.add(memberCountLabel);
+		statsPanel.add(totalXpLabel);
+		statsPanel.add(totalEhpLabel);
+		statsPanel.add(totalEhbLabel);
+		
+
+		JPanel clanInfoPanel = new JPanel(new BorderLayout(0, 6));
+		clanInfoPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		clanInfoPanel.setBorder(new EmptyBorder(0, 8, 8, 8));
+		clanInfoPanel.add(clanTitlePanel, BorderLayout.NORTH);
+		clanInfoPanel.add(statsPanel, BorderLayout.CENTER);
+		updateClanInfo(null);
 
 		// ── Search field ───────────────────────────────────────────────────────
 		searchField = new JTextField();
@@ -121,6 +165,7 @@ class WomClanPanel extends PluginPanel
 		JPanel headerPanel = new JPanel(new BorderLayout());
 		headerPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		headerPanel.add(topBar, BorderLayout.NORTH);
+		headerPanel.add(clanInfoPanel, BorderLayout.CENTER);
 		headerPanel.add(searchWrapper, BorderLayout.SOUTH);
 
 		add(headerPanel, BorderLayout.NORTH);
@@ -154,6 +199,14 @@ class WomClanPanel extends PluginPanel
 		button.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR),
 			new EmptyBorder(4, 10, 4, 10)));
+	}
+
+	private JLabel createClanStatLabel()
+	{
+		JLabel label = new JLabel();
+		label.setFont(FontManager.getRunescapeSmallFont());
+		label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		return label;
 	}
 
 	private void onSyncClicked(ActionEvent e)
@@ -213,7 +266,7 @@ class WomClanPanel extends PluginPanel
 	/** Called on the EDT after a successful fetch. */
 	void updateMembers(List<WomMember> members)
 	{
-		updateClanData(new WomClanData(members, new ArrayList<>(), new ArrayList<>()));
+		updateClanData(new WomClanData(buildClanInfo(null, members), members, new ArrayList<>(), new ArrayList<>()));
 	}
 
 	/** Called on the EDT after a successful fetch. */
@@ -223,6 +276,7 @@ class WomClanPanel extends PluginPanel
 		allAchievements = new ArrayList<>(clanData.getAchievements());
 		allActivity = new ArrayList<>(clanData.getActivity());
 		allMembers.sort(Comparator.comparingLong(WomMember::getTotalXp).reversed());
+		updateClanInfo(clanData.getInfo() == null ? buildClanInfo(null, allMembers) : clanData.getInfo());
 		statusLabel.setText("Synced: just now");
 		syncButton.setEnabled(true);
 		syncButton.setText("Sync Now");
@@ -246,6 +300,7 @@ class WomClanPanel extends PluginPanel
 		statusLabel.setText("Sync failed");
 		syncButton.setEnabled(true);
 		syncButton.setText("Sync Now");
+		updateClanInfo(null);
 		showPlaceholder("Error: " + msg + "\n\nCheck your Group ID and connection.");
 	}
 
@@ -285,6 +340,52 @@ class WomClanPanel extends PluginPanel
 		}
 
 		rebuildList(filtered);
+	}
+
+	private void updateClanInfo(WomClanInfo info)
+	{
+		if (info == null)
+		{
+			clanNameLabel.setText("Clan");
+			clanChatLabel.setText("No clan data loaded");
+			memberCountLabel.setText(formatStatLabel("Members", "-"));
+			totalXpLabel.setText(formatStatLabel("XP", "-"));
+			totalEhpLabel.setText(formatStatLabel("EHP", "-"));
+			totalEhbLabel.setText(formatStatLabel("EHB", "-"));
+			return;
+		}
+
+		clanNameLabel.setText(info.getName());
+		clanChatLabel.setText(info.getClanChat().isEmpty() ? "Clan chat: -" : "Clan chat: " + info.getClanChat());
+		memberCountLabel.setText(formatStatLabel("Members", INTEGER_FORMAT.format(info.getMemberCount())));
+		totalXpLabel.setText(formatStatLabel("XP", INTEGER_FORMAT.format(info.getTotalXp())));
+		totalEhpLabel.setText(formatStatLabel("EHP", formatDecimal(info.getTotalEhp())));
+		totalEhbLabel.setText(formatStatLabel("EHB", formatDecimal(info.getTotalEhb())));
+	}
+
+	private WomClanInfo buildClanInfo(String name, List<WomMember> members)
+	{
+		long totalXp = 0L;
+		double totalEhp = 0.0;
+		double totalEhb = 0.0;
+		for (WomMember member : members)
+		{
+			totalXp += member.getTotalXp();
+			totalEhp += member.getEhp();
+			totalEhb += member.getEhb();
+		}
+
+		return new WomClanInfo(name == null ? "Clan" : name, "", members.size(), totalXp, totalEhp, totalEhb);
+	}
+
+	private String formatDecimal(double value)
+	{
+		return INTEGER_FORMAT.format(Math.round(value));
+	}
+
+	private String formatStatLabel(String label, String value)
+	{
+		return "<html><b>" + label + ":</b> " + value + "</html>";
 	}
 
 	private void rebuildList(List<WomMember> members)

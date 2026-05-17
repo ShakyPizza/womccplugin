@@ -28,8 +28,13 @@ public class WomApiClient
 
 	public WomClanData fetchClanData(int groupId) throws IOException
 	{
+		String body = fetchBody(API_BASE + "/groups/" + groupId, "group " + groupId);
+		List<WomMember> members = parseMembers(body);
+
+		log.debug("Fetched {} members for group {}", members.size(), groupId);
 		return new WomClanData(
-			fetchMembers(groupId),
+			parseClanInfo(body, members),
+			members,
 			fetchAchievementsOrEmpty(groupId),
 			fetchActivityOrEmpty(groupId)
 		);
@@ -147,6 +152,28 @@ public class WomApiClient
 		}
 
 		return members;
+	}
+
+	static WomClanInfo parseClanInfo(String body, List<WomMember> members) throws IOException
+	{
+		JsonObject root = new JsonParser().parse(body).getAsJsonObject();
+		String name = readString(root, "name", "Clan");
+		String clanChat = readString(root, "clanChat", "");
+		int memberCount = root.has("memberCount") && !root.get("memberCount").isJsonNull()
+			? root.get("memberCount").getAsInt()
+			: members.size();
+
+		long totalXp = 0L;
+		double totalEhp = 0.0;
+		double totalEhb = 0.0;
+		for (WomMember member : members)
+		{
+			totalXp += member.getTotalXp();
+			totalEhp += member.getEhp();
+			totalEhb += member.getEhb();
+		}
+
+		return new WomClanInfo(name, clanChat, memberCount, totalXp, totalEhp, totalEhb);
 	}
 
 	static List<WomAchievement> parseAchievements(String body) throws IOException
