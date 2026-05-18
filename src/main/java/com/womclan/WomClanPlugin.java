@@ -1,5 +1,6 @@
 package com.womclan;
 
+import com.google.gson.Gson;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.ConfigManager;
@@ -39,6 +40,9 @@ public class WomClanPlugin extends Plugin
 	@Inject
 	private WomApiClient apiClient;
 
+	@Inject
+	private Gson gson;
+
 	private WomClanPanel panel;
 	private NavigationButton navButton;
 	private ScheduledExecutorService executor;
@@ -60,7 +64,7 @@ public class WomClanPlugin extends Plugin
 
 		clientToolbar.addNavigation(navButton);
 
-		cache = new WomClanCache();
+		cache = new WomClanCache(gson);
 		executor = Executors.newSingleThreadScheduledExecutor();
 		executor.submit(this::loadCachedData);
 		scheduleAutoRefresh();

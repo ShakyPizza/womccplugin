@@ -1,7 +1,6 @@
 package com.womclan;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -25,20 +24,21 @@ import java.time.Instant;
 class WomClanCache
 {
 	private static final String CACHE_DIRECTORY = "womclan";
-	private static final Gson GSON = new GsonBuilder()
-		.registerTypeAdapter(Instant.class, new InstantAdapter())
-		.create();
 
 	private final Path cacheDir;
+	private final Gson gson;
 
-	WomClanCache()
+	WomClanCache(Gson gson)
 	{
-		this(RuneLite.RUNELITE_DIR.toPath().resolve(CACHE_DIRECTORY));
+		this(RuneLite.RUNELITE_DIR.toPath().resolve(CACHE_DIRECTORY), gson);
 	}
 
-	WomClanCache(Path cacheDir)
+	WomClanCache(Path cacheDir, Gson gson)
 	{
 		this.cacheDir = cacheDir;
+		this.gson = gson.newBuilder()
+			.registerTypeAdapter(Instant.class, new InstantAdapter())
+			.create();
 	}
 
 	WomClanData load(int groupId)
@@ -52,7 +52,7 @@ class WomClanCache
 		try
 		{
 			String json = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-			return GSON.fromJson(json, WomClanData.class);
+			return gson.fromJson(json, WomClanData.class);
 		}
 		catch (RuntimeException | IOException e)
 		{
@@ -68,7 +68,7 @@ class WomClanCache
 			Files.createDirectories(cacheDir);
 			Path path = cachePath(groupId);
 			Path tempPath = cacheDir.resolve(path.getFileName() + ".tmp");
-			Files.write(tempPath, GSON.toJson(clanData).getBytes(StandardCharsets.UTF_8));
+			Files.write(tempPath, gson.toJson(clanData).getBytes(StandardCharsets.UTF_8));
 			try
 			{
 				Files.move(tempPath, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
