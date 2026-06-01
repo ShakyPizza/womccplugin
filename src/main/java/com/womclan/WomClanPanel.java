@@ -273,37 +273,10 @@ class WomClanPanel extends PluginPanel
 	/** Called on the EDT after a successful fetch. */
 	void updateClanData(WomClanData clanData)
 	{
-		updateClanData(clanData, "Synced: just now");
-	}
-
-	/** Called on the EDT after loading persisted data. */
-	void updateCachedClanData(WomClanData clanData)
-	{
-		updateClanData(clanData, "Loaded cached data");
-	}
-
-	void clearClanData(String statusText)
-	{
-		allMembers = new ArrayList<>();
-		allAchievements = new ArrayList<>();
-		allActivity = new ArrayList<>();
-		allNameChanges = new ArrayList<>();
-		updateClanInfo(null);
-		statusLabel.setText(statusText);
-		filterMembers();
-
-		if (expandedWindow != null && expandedWindow.isVisible())
-		{
-			expandedWindow.setClanData(allMembers, allAchievements, allActivity, allNameChanges);
-		}
-	}
-
-	private void updateClanData(WomClanData clanData, String statusText)
-	{
-		allMembers = copyList(clanData.getMembers());
-		allAchievements = copyList(clanData.getAchievements());
-		allActivity = copyList(clanData.getActivity());
-		allNameChanges = copyList(clanData.getNameChanges());
+		allMembers = new ArrayList<>(clanData.getMembers());
+		allAchievements = new ArrayList<>(clanData.getAchievements());
+		allActivity = new ArrayList<>(clanData.getActivity());
+		allNameChanges = new ArrayList<>(clanData.getNameChanges());
 		allMembers.sort(Comparator.comparingLong(WomMember::getTotalXp).reversed());
 		updateClanInfo(clanData.getInfo() == null ? buildClanInfo(null, allMembers) : clanData.getInfo());
 		statusLabel.setText(statusText);

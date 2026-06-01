@@ -10,8 +10,7 @@ It adds a RuneLite sidebar panel with your clan summary, a searchable member lis
 - Searchable member list in the RuneLite sidebar
 - Member roles shown next to each player
 - Manual `Sync Now` button
-- Automatic refresh every hour, if enabled
-- Local cache so the last synced data is available after restarting RuneLite
+- Automatic refresh every 30 minutes, if enabled
 - Larger `GUI` window for sortable member stats
 - Recent achievements, joins, leaves, and name changes in the expanded window
 
@@ -60,18 +59,16 @@ The `Members` tab includes:
 
 You can sort the table columns and use the search field to filter members.
 
-The expanded window also includes tabs for recent achievements, recent group activity, and the latest 50 clan name changes.
+The expanded window also includes tabs for recent achievements, recent group activity, and recent clan name changes.
 
 ## Settings
 
 | Setting | What it does |
 |---|---|
 | `WOM Group ID` | The Wise Old Man group to sync |
-| `Auto-refresh (every 1 hour)` | Automatically refreshes data while RuneLite is running |
+| `Auto-refresh (every 30 min)` | Automatically refreshes data while RuneLite is running |
 
 Auto-refresh is enabled by default. You can still use `Sync Now` whenever you want an immediate update, subject to the 5 minute manual sync cooldown.
-
-The plugin keeps a local cache of the last successful sync in RuneLite's data folder. Cached data is loaded on startup, then replaced after a successful Wise Old Man sync. If the latest sync matches the cached data, the UI keeps the existing rows and reports that there were no changes.
 
 ## Troubleshooting
 
