@@ -1,5 +1,6 @@
 package com.womclan;
 
+import com.google.gson.Gson;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.ConfigManager;
@@ -28,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 )
 public class WomClanPlugin extends Plugin
 {
-	private static final int AUTO_REFRESH_MINUTES = 30;
+	private static final int AUTO_REFRESH_MINUTES = 60;
 
 	@Inject
 	private ClientToolbar clientToolbar;
@@ -39,10 +40,15 @@ public class WomClanPlugin extends Plugin
 	@Inject
 	private WomApiClient apiClient;
 
+	@Inject
+	private Gson gson;
+
 	private WomClanPanel panel;
 	private NavigationButton navButton;
 	private ScheduledExecutorService executor;
 	private ScheduledFuture<?> autoRefreshTask;
+	private WomClanCache cache;
+	private WomClanData cachedClanData;
 
 	@Override
 	protected void startUp() throws Exception
@@ -58,7 +64,9 @@ public class WomClanPlugin extends Plugin
 
 		clientToolbar.addNavigation(navButton);
 
+		cache = new WomClanCache(gson);
 		executor = Executors.newSingleThreadScheduledExecutor();
+		executor.submit(this::loadCachedData);
 		scheduleAutoRefresh();
 	}
 
@@ -72,6 +80,8 @@ public class WomClanPlugin extends Plugin
 			executor.shutdownNow();
 			executor = null;
 		}
+		cache = null;
+		cachedClanData = null;
 
 		clientToolbar.removeNavigation(navButton);
 
@@ -92,6 +102,12 @@ public class WomClanPlugin extends Plugin
 
 		// Re-schedule whenever groupId or autoRefresh toggle changes
 		cancelAutoRefresh();
+		cachedClanData = null;
+		SwingUtilities.invokeLater(() -> panel.clearClanData("Loading cached data..."));
+		if (executor != null && !executor.isShutdown())
+		{
+			executor.submit(this::loadCachedData);
+		}
 		scheduleAutoRefresh();
 	}
 
@@ -113,7 +129,7 @@ public class WomClanPlugin extends Plugin
 			return;
 		}
 
-		// Fetch immediately on startup / config change, then every 30 min
+		// Fetch immediately on startup / config change, then every 60 min
 		autoRefreshTask = executor.scheduleAtFixedRate(
 			this::fetchAndUpdate,
 			0, AUTO_REFRESH_MINUTES, TimeUnit.MINUTES
@@ -135,7 +151,8 @@ public class WomClanPlugin extends Plugin
 
 		if (groupId <= 0)
 		{
-			SwingUtilities.invokeLater(() -> panel.setSyncStatus("Set Group ID in config"));
+			cachedClanData = null;
+			SwingUtilities.invokeLater(() -> panel.clearClanData("Set Group ID in config"));
 			return;
 		}
 
@@ -144,6 +161,17 @@ public class WomClanPlugin extends Plugin
 		try
 		{
 			WomClanData clanData = apiClient.fetchClanData(groupId);
+			if (clanData.equals(cachedClanData))
+			{
+				SwingUtilities.invokeLater(() -> panel.setSyncStatus("Synced: no changes"));
+				return;
+			}
+
+			cachedClanData = clanData;
+			if (cache != null)
+			{
+				cache.save(groupId, clanData);
+			}
 			SwingUtilities.invokeLater(() -> panel.updateClanData(clanData));
 		}
 		catch (IOException e)
@@ -151,6 +179,28 @@ public class WomClanPlugin extends Plugin
 			log.warn("WOM Clan Stats: failed to fetch group {}: {}", groupId, e.getMessage());
 			SwingUtilities.invokeLater(() -> panel.showError(e.getMessage()));
 		}
+	}
+
+	private void loadCachedData()
+	{
+		int groupId = config.groupId();
+		if (groupId <= 0 || cache == null)
+		{
+			cachedClanData = null;
+			SwingUtilities.invokeLater(() -> panel.clearClanData("Set Group ID in config"));
+			return;
+		}
+
+		WomClanData clanData = cache.load(groupId);
+		if (clanData == null)
+		{
+			cachedClanData = null;
+			SwingUtilities.invokeLater(() -> panel.clearClanData("No cached data"));
+			return;
+		}
+
+		cachedClanData = clanData;
+		SwingUtilities.invokeLater(() -> panel.updateCachedClanData(clanData));
 	}
 
 	/** Creates a small 16×16 icon programmatically (blue rounded square with "W"). */

@@ -279,7 +279,7 @@ class WomClanPanel extends PluginPanel
 		allNameChanges = new ArrayList<>(clanData.getNameChanges());
 		allMembers.sort(Comparator.comparingLong(WomMember::getTotalXp).reversed());
 		updateClanInfo(clanData.getInfo() == null ? buildClanInfo(null, allMembers) : clanData.getInfo());
-		statusLabel.setText("Synced: just now");
+		statusLabel.setText(statusText);
 		syncButton.setEnabled(true);
 		syncButton.setText("Sync Now");
 		filterMembers();
@@ -342,6 +342,11 @@ class WomClanPanel extends PluginPanel
 		}
 
 		rebuildList(filtered);
+	}
+
+	private <T> List<T> copyList(List<T> values)
+	{
+		return values == null ? new ArrayList<>() : new ArrayList<>(values);
 	}
 
 	private void updateClanInfo(WomClanInfo info)
