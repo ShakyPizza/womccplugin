@@ -16,6 +16,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -30,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 public class WomClanPlugin extends Plugin
 {
 	private static final int AUTO_REFRESH_MINUTES = 60;
+	private static final int REQUEST_SPACING_MILLIS = 750;
 
 	@Inject
 	private ClientToolbar clientToolbar;
@@ -160,24 +163,146 @@ public class WomClanPlugin extends Plugin
 
 		try
 		{
-			WomClanData clanData = apiClient.fetchClanData(groupId);
-			if (clanData.equals(cachedClanData))
-			{
-				SwingUtilities.invokeLater(() -> panel.setSyncStatus("Synced: no changes"));
-				return;
-			}
-
-			cachedClanData = clanData;
-			if (cache != null)
-			{
-				cache.save(groupId, clanData);
-			}
-			SwingUtilities.invokeLater(() -> panel.updateClanData(clanData));
+			WomClanData primaryData = apiClient.fetchPrimaryClanData(groupId);
+			scheduleFetchAchievements(new ClanSyncState(groupId, primaryData));
 		}
 		catch (IOException e)
 		{
 			log.warn("WOM Clan Stats: failed to fetch group {}: {}", groupId, e.getMessage());
 			SwingUtilities.invokeLater(() -> panel.showError(e.getMessage()));
+		}
+	}
+
+	private void scheduleFetchAchievements(ClanSyncState state)
+	{
+		scheduleSyncStage(() ->
+		{
+			if (!isCurrentSync(state))
+			{
+				return;
+			}
+
+			state.achievements = fetchAchievementsOrEmpty(state.groupId);
+			scheduleFetchActivity(state);
+		});
+	}
+
+	private void scheduleFetchActivity(ClanSyncState state)
+	{
+		scheduleSyncStage(() ->
+		{
+			if (!isCurrentSync(state))
+			{
+				return;
+			}
+
+			state.activity = fetchActivityOrEmpty(state.groupId);
+			scheduleFetchNameChanges(state);
+		});
+	}
+
+	private void scheduleFetchNameChanges(ClanSyncState state)
+	{
+		scheduleSyncStage(() ->
+		{
+			if (!isCurrentSync(state))
+			{
+				return;
+			}
+
+			state.nameChanges = fetchNameChangesOrEmpty(state.groupId);
+			finishFetch(state);
+		});
+	}
+
+	private void scheduleSyncStage(Runnable task)
+	{
+		if (executor != null && !executor.isShutdown())
+		{
+			executor.schedule(task, REQUEST_SPACING_MILLIS, TimeUnit.MILLISECONDS);
+		}
+	}
+
+	private boolean isCurrentSync(ClanSyncState state)
+	{
+		return state.groupId == config.groupId();
+	}
+
+	private List<WomAchievement> fetchAchievementsOrEmpty(int groupId)
+	{
+		try
+		{
+			return apiClient.fetchAchievements(groupId);
+		}
+		catch (IOException e)
+		{
+			log.warn("WOM Clan Stats: failed to fetch achievements for group {}: {}", groupId, e.getMessage());
+			return new ArrayList<>();
+		}
+	}
+
+	private List<WomGroupActivity> fetchActivityOrEmpty(int groupId)
+	{
+		try
+		{
+			return apiClient.fetchActivity(groupId);
+		}
+		catch (IOException e)
+		{
+			log.warn("WOM Clan Stats: failed to fetch activity for group {}: {}", groupId, e.getMessage());
+			return new ArrayList<>();
+		}
+	}
+
+	private List<WomNameChange> fetchNameChangesOrEmpty(int groupId)
+	{
+		try
+		{
+			return apiClient.fetchNameChanges(groupId);
+		}
+		catch (IOException e)
+		{
+			log.warn("WOM Clan Stats: failed to fetch name changes for group {}: {}", groupId, e.getMessage());
+			return new ArrayList<>();
+		}
+	}
+
+	private void finishFetch(ClanSyncState state)
+	{
+		WomClanData clanData = new WomClanData(
+			state.primaryData.getInfo(),
+			state.primaryData.getMembers(),
+			state.achievements,
+			state.activity,
+			state.nameChanges
+		);
+
+		if (clanData.equals(cachedClanData))
+		{
+			SwingUtilities.invokeLater(() -> panel.setSyncStatus("Synced: no changes"));
+			return;
+		}
+
+		cachedClanData = clanData;
+		if (cache != null)
+		{
+			cache.save(state.groupId, clanData);
+		}
+		SwingUtilities.invokeLater(() -> panel.updateClanData(clanData));
+	}
+
+	private static class ClanSyncState
+	{
+		private final int groupId;
+		private final WomClanData primaryData;
+		private List<WomAchievement> achievements = new ArrayList<>();
+		private List<WomGroupActivity> activity = new ArrayList<>();
+		private List<WomNameChange> nameChanges = new ArrayList<>();
+
+		private ClanSyncState(int groupId, WomClanData primaryData)
+		{
+			this.groupId = groupId;
+			this.primaryData = primaryData;
 		}
 	}
 

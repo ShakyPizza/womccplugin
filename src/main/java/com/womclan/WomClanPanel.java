@@ -279,10 +279,36 @@ class WomClanPanel extends PluginPanel
 		allNameChanges = new ArrayList<>(clanData.getNameChanges());
 		allMembers.sort(Comparator.comparingLong(WomMember::getTotalXp).reversed());
 		updateClanInfo(clanData.getInfo() == null ? buildClanInfo(null, allMembers) : clanData.getInfo());
-		statusLabel.setText(statusText);
+		statusLabel.setText("Synced");
 		syncButton.setEnabled(true);
 		syncButton.setText("Sync Now");
 		filterMembers();
+
+		if (expandedWindow != null && expandedWindow.isVisible())
+		{
+			expandedWindow.setClanData(allMembers, allAchievements, allActivity, allNameChanges);
+		}
+	}
+
+	/** Called on the EDT after cached data is loaded. */
+	void updateCachedClanData(WomClanData clanData)
+	{
+		updateClanData(clanData);
+		statusLabel.setText("Loaded from cache");
+	}
+
+	/** Clears all displayed clan data and shows the provided status/placeholder message. */
+	void clearClanData(String message)
+	{
+		allMembers = new ArrayList<>();
+		allAchievements = new ArrayList<>();
+		allActivity = new ArrayList<>();
+		allNameChanges = new ArrayList<>();
+		updateClanInfo(null);
+		statusLabel.setText(message);
+		syncButton.setEnabled(true);
+		syncButton.setText("Sync Now");
+		showPlaceholder(message);
 
 		if (expandedWindow != null && expandedWindow.isVisible())
 		{
@@ -299,11 +325,18 @@ class WomClanPanel extends PluginPanel
 	/** Shows an error state in the panel (call via SwingUtilities.invokeLater). */
 	void showError(String msg)
 	{
-		statusLabel.setText("Sync failed");
 		syncButton.setEnabled(true);
 		syncButton.setText("Sync Now");
-		updateClanInfo(null);
-		showPlaceholder("Error: " + msg + "\n\nCheck your Group ID and connection.");
+
+		if (allMembers.isEmpty())
+		{
+			statusLabel.setText("Sync failed");
+			updateClanInfo(null);
+			showPlaceholder("Error: " + msg + "\n\nCheck your Group ID and connection.");
+			return;
+		}
+
+		statusLabel.setText("Sync failed, showing last data");
 	}
 
 	void shutdown()

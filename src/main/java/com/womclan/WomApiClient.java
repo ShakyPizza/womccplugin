@@ -27,7 +27,7 @@ public class WomApiClient
 	@Inject
 	private OkHttpClient okHttpClient;
 
-	public WomClanData fetchClanData(int groupId) throws IOException
+	public WomClanData fetchPrimaryClanData(int groupId) throws IOException
 	{
 		String body = fetchBody(API_BASE + "/groups/" + groupId, "group " + groupId);
 		List<WomMember> members = parseMembers(body);
@@ -36,9 +36,9 @@ public class WomApiClient
 		return new WomClanData(
 			parseClanInfo(body, members),
 			members,
-			fetchAchievementsOrEmpty(groupId),
-			fetchActivityOrEmpty(groupId),
-			fetchNameChangesOrEmpty(groupId)
+			new ArrayList<>(),
+			new ArrayList<>(),
+			new ArrayList<>()
 		);
 	}
 
@@ -92,45 +92,6 @@ public class WomApiClient
 
 		log.debug("Fetched {} name changes for group {}", nameChanges.size(), groupId);
 		return nameChanges;
-	}
-
-	private List<WomAchievement> fetchAchievementsOrEmpty(int groupId)
-	{
-		try
-		{
-			return fetchAchievements(groupId);
-		}
-		catch (IOException e)
-		{
-			log.warn("WOM Clan Stats: failed to fetch achievements for group {}: {}", groupId, e.getMessage());
-			return new ArrayList<>();
-		}
-	}
-
-	private List<WomGroupActivity> fetchActivityOrEmpty(int groupId)
-	{
-		try
-		{
-			return fetchActivity(groupId);
-		}
-		catch (IOException e)
-		{
-			log.warn("WOM Clan Stats: failed to fetch activity for group {}: {}", groupId, e.getMessage());
-			return new ArrayList<>();
-		}
-	}
-
-	private List<WomNameChange> fetchNameChangesOrEmpty(int groupId)
-	{
-		try
-		{
-			return fetchNameChanges(groupId);
-		}
-		catch (IOException e)
-		{
-			log.warn("WOM Clan Stats: failed to fetch name changes for group {}: {}", groupId, e.getMessage());
-			return new ArrayList<>();
-		}
 	}
 
 	static List<WomMember> parseMembers(String body) throws IOException
